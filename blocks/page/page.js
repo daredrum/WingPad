@@ -15,7 +15,8 @@ Team1 = {
 
     this.bindSocketHandlers()
 
-    this.auth().done(this.openDocument)
+//    this.auth().done(this.openDocument)
+    this.auth()
   }
   , getDocId: function () {
     return this.getDocIdFromHash() || _.random(10000000000)
@@ -28,14 +29,42 @@ Team1 = {
    * @returns {jQuery.Deferred}
    */
   , auth: function () {
-    var user = {
-      title: window.prompt('Your name:')
-    }
 
-    this.__user = user
+	var popup = new Team1.Popup()
+	popup.open('login')
 
-    return $.Deferred().resolve(user).promise()
+	$(document).on('submit', '.login-form', {popup: popup}, this.onLoginSubmit)
+
+//	return $.Deferred().resolve(user).promise()
   }
+
+  , onLoginSubmit: function(e) {
+		e.preventDefault()
+		var form = $(e.target)
+			, _this = this
+			, popup = e.data.popup
+		$.ajax({
+				url: form.attr('action')
+			, data: form.serialize()
+			, method: form.attr('method')
+		})
+		.done(function(data) {
+				popup.close()
+				_this.__user = {
+					title: data
+				}
+				_this.openDocument()
+				$('.form-error').html('')
+		})
+		.fail(function(err) {
+			console.error(err)
+			$('.form-error').html(err.responseText)
+		});
+	}
+
+	, clearForm: function(form) {
+
+	}
 
   /**
    * Create interface for document

@@ -86,7 +86,7 @@ window.sharejs.Doc.prototype._onMessage = function (msg) {
       if (console) console.warn('Unhandled document message:', msg);
       break;
   }
-};
+}
 
 window.sharejs.Doc.prototype.onOpenMessageFn = function () {};
 window.sharejs.Doc.prototype.onJoinMessageFn = function () {};

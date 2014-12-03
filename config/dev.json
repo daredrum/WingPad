@@ -5,5 +5,24 @@
   },
   "socket_server": {
     "port": 7900
-  }
+  },
+	"mongoose": {
+		"uri": "mongodb://localhost/wingpad",
+		"options": {
+			"server": {
+				"socketOptions": {
+					"keepAlive": 1
+				}
+			}
+		}
+	},
+	"session": {
+		"secret": "KillerIsJim",
+		"key": "sid",
+		"cookie": {
+			"path": "/",
+			"httpOnly": true,
+			"maxAge": null
+		}
+	}
 }

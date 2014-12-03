@@ -2,6 +2,7 @@
 
 <head>
   <title>WingPad</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 </head>
 
 <header class="header">
@@ -29,6 +30,35 @@
   <section class="editor">
     <textarea id="docEditor"></textarea>
   </section>
+</div>
+
+<div class="popup-layout" data-popup="layout"></div>
+<div id="login" class="popup" data-popup="block">
+	<div class="popup-wrapper">
+		<p class="popup-descr">Введите имя пользователя и пароль. Если такого пользователя нет - он будет создан.</p>
+		<div class="form-error"></div>
+		<form class="login-form" action="/login" method="post">
+			<div class="form-group">
+				<label for="input-username" class="col-lg-2 control-label">Имя</label>
+				<div class="form-col">
+					<input name="username" type="text" class="form-control" id="input-username" placeholder="Имя">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="input-password" class="col-lg-2 control-label">Пароль</label>
+				<div class="form-col">
+					<input name="password" type="password" class="form-control" id="input-password" placeholder="Пароль">
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="form-col">
+					<button type="submit" class="btn-submit" data-loading-text="Отправляю...">Войти</button>
+					<span class="help-block error"></span>
+				</div>
+			</div>
+		</form>
+	</div>
+	<a class="popup-close" href="#" data-popup="close">x</a>
 </div>
 
 <script type="template" id="user-tpl">
