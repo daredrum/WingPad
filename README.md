@@ -6,6 +6,14 @@
 
 Collaborative real-time code editor
 
+## Доработки
+
+- серверная часть переписана с использованием express
+- регистрация пользователя и сохранение в mongoDB
+- сохранение документа в mongoDB
+
+На данный момент доработки еще не готовы.
+
 ## Installing and running
 
 Navigate to the app folder and type following commands:
