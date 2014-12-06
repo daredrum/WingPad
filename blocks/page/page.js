@@ -31,7 +31,10 @@ Team1 = {
   , auth: function () {
 
 	var popup = new Team1.Popup()
-	popup.open('login')
+	setTimeout(function() {
+		popup.open('login')
+	}, 100)
+
 
 	$(document).on('submit', '.login-form', {popup: popup}, this.onLoginSubmit)
 

@@ -1,20 +1,11 @@
-/**
- * Created by Mantsevich on 21.10.2014.
- */
-
 var _ = require('lodash-node')
   , Duplex = require('stream').Duplex
   , livedb = require('livedb')
   , sharejs = require('share')
   , backend = livedb.client(livedb.memory())
-  , share = sharejs.server.createClient(
-    { backend: backend
-    }
-  )
+  , share = sharejs.server.createClient({ backend: backend })
 
-  , getUID = function () {
-    return _.uniqueId()
-  }
+  , getUID = function () { return _.uniqueId() }
   , Documents = require('../documents')
   , User = function (options) {
     var self = this
@@ -26,21 +17,16 @@ var _ = require('lodash-node')
 
     this.id = getUID()
     this.document = null
-    this.props =
-    { title: 'Anonymous'
-    }
+    this.props = { title: 'Anonymous' }
 
     this._stream._write = function (chunk, encoding, callback) {
       self._connection.send(JSON.stringify(chunk))
-
       return callback()
     }
 
     this._stream._read = function () {}
-
     this._stream.headers = this._connection.upgradeReq.headers
-    this._stream.remoteAddress =
-      this._connection.upgradeReq.connection.remoteAddress
+    this._stream.remoteAddress = this._connection.upgradeReq.connection.remoteAddress
 
     this._connection.on('message', this.onMessage)
 
@@ -62,143 +48,96 @@ var _ = require('lodash-node')
 
     share.listen(this._stream)
   }
-  , proto = User.prototype
 
 module.exports = User
 
-proto.onMessage = function (data) {
-  var jsonData = JSON.parse(data)
+_.extend(User.prototype, {
 
-  if (jsonData.a === 'open')
-  { this.onOpenEvent(jsonData)
-    return;
-  }
-  if (jsonData.a === 'meta')
-  { this.onMetaEvent(jsonData)
-    return;
-  }
+	onMessage: function (data) {
+		var jsonData = JSON.parse(data)
 
-  return this._stream.push(jsonData)
-}
+		if (jsonData.a === 'open')
+		{ this.onOpenEvent(jsonData)
+			return;
+		}
+		if (jsonData.a === 'meta')
+		{ this.onMetaEvent(jsonData)
+			return;
+		}
 
-proto.getColor = function () {
-  return this.color
-}
+		return this._stream.push(jsonData)
+	}
 
-proto.setColor = function (color) {
-  this.color = color
-}
+	, getColor: function () {
+		return this.color
+	}
 
-/**
- * Fire event on client (Unsafe!) TODO: Discuss with Team
- * @param event
- * @param data
- * @returns {User}
- */
-proto.emit = function (data) {
-  this._connection.send(JSON.stringify(data))
-  return this
-}
-//endregion
+	,	setColor: function (color) {
+		this.color = color
+	}
 
+	,	emit: function (data) {
+		this._connection.send(JSON.stringify(data))
+		return this
+	}
 
-//region *** Exports data API ***
+	,	exportOnlyId: function () {
+		return {
+			id: this.id
+		}
+	}
 
-/**
- * Simple export
- * @returns {{id: *}}
- */
-proto.exportOnlyId = function () {
-  return {
-    id: this.id
-  }
-}
+	,	exportPublicData: function () {
+		return _.extend(this.exportOnlyId(),
+			{ title: this.props.title
+			, color: this.color
+			}
+		)
+	}
 
-/**
- * Public data for other users
- * @returns {Object|*}
- */
-proto.exportPublicData = function () {
-  return _.extend(this.exportOnlyId(),
-    { title: this.props.title
-    , color: this.color
-    }
-  )
-}
+	,	exportPrivateData: function () {
+		return _.extend(this.exportPublicData(), {})
+	}
 
-/**
- * Private data for owner
- * @returns {Object|*}
- */
-proto.exportPrivateData = function () {
-  return _.extend(this.exportPublicData(), {})
-}
-//endregion
+	,	openDocument: function (document) {
+		document = _.extend(document, {backend: backend})
+		this.document = Documents.factory(document).addCollaborator(this)
+		this.emit({
+			a: 'open',
+			user: this.exportPrivateData(),
+			document: this.document.exportPublicData()
+		})
+		return this
+	}
 
+	,	closeDocument: function () {
+		if (this.document !== null) this.document.removeCollaborator(this)
+		return this
+	}
 
-//region *** Document API ***
-/**
- * Open document
- * @param document {Document}
- */
-proto.openDocument = function (document) {
-  this.document = Documents.factory(document).addCollaborator(this)
-  this.emit({
-    a: 'open',
-    user: this.exportPrivateData(),
-    document: this.document.exportPublicData()
-  })
-  return this
-}
+	,	updateData: function (data) {
+		delete data.id
 
-/**
- * Close last opened document
- */
-proto.closeDocument = function () {
-  if (this.document !== null) this.document.removeCollaborator(this)
-  return this
-}
-//endregion
+		_.extend(this.props, data, function (a, b) {
+			return b ? b : a
+		})
 
+		return this
+	}
 
-//region *** Common API & Helpers ***
+	,	onOpenEvent: function (data) {
+		if (data.user)
+			this.updateData(data.user)
+		this.openDocument(data.document)
+		return this
+	}
 
-/**
- * Update user data/props
- * @param data
- * @returns {User}
- */
-proto.updateData = function (data) {
-  delete data.id
+	,	onMetaEvent: function (data) {
+		this.document.metaCollaborators(this, data)
+		return this
+	}
 
-  _.extend(this.props, data, function (a, b) {
-    return b ? b : a
-  })
-
-  return this
-}
-
-/**
- * Helper for our API
- * @param data
- * @returns {User}
- * @private
- */
-proto.onOpenEvent = function (data) {
-  if (data.user)
-    this.updateData(data.user)
-  this.openDocument(data.document)
-  return this
-}
-
-proto.onMetaEvent = function (data) {
-  this.document.metaCollaborators(this, data)
-  return this
-}
-
-/**
- * Destroy info about user
- */
-proto.destroy = function () {
-  this.closeDocument()
-}
+	,	destroy: function () {
+		this.closeDocument()
+	}
+})

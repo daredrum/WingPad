@@ -52,5 +52,6 @@
 	cursor: pointer;
 }
 .form-error {
+	margin-bottom: 15px;
 	color: #d30707;
 }
